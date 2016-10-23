@@ -1,0 +1,23 @@
+Source: easysite
+Section: unknown
+Priority: optional
+Maintainer: Jacob Kanev <jkanev@zoho.com>
+Build-Depends: debhelper (>= 9)
+Standards-Version: 3.9.5
+Homepage: <insert the upstream URL, if relevant>
+#Vcs-Git: git://anonscm.debian.org/collab-maint/easysite.git
+#Vcs-Browser: http://anonscm.debian.org/?p=collab-maint/easysite.git;a=summary
+
+Package: easysite
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Provides: html-generator
+Description: ruby scripts to create html pages from xml
+ easySite is a set of ruby scripts which builds a series of html-files (site),
+ based on a user's definition file. Main intention is to provide simple user home-pages 
+ with the same look-and-feel, simple navigation bar support and multi-lingual support. 
+ .
+ The system maintainer installs a style-definition file 
+ (a couple of which are provided as defaults) to define the page layout. The users 
+ have to write a simple xml file and then run the easySite script to generate their home-page. 
+ An interactive tool is planned for the future which writes the user files.
