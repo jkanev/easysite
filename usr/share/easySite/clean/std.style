@@ -1,0 +1,163 @@
+<siteStyle>
+
+<layout  type=default>
+	<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+	<html>
+		<head>
+			<title>$title</title>
+			<link rel="stylesheet" type="text/css" href="style/style.css">
+			<meta name="description" content="Personal Homepage">
+			<meta name="author" content="$author">
+			<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+			<meta name="keywords" content="$keyWords">
+		</head>
+		<body text="#000000" bgcolor="#FFFFFF" link="#c40000" alink="#000099" vlink="#660000">
+			<table width=700 cellspacing=0 cellpadding=0 border=0>
+				<tr>
+					<td></td>
+					<td>
+						<div align="center">
+							<table width="556" cellpadding="10" bgcolor="#ffffff">
+								<tr>
+									<td class="head">
+										$header
+									</td>
+								</tr>
+							</table>
+						</div>
+					</td>
+				</tr>
+				<tr>
+					<td class="navBar">
+						$navBar
+					</td>
+					<td class="content" padding=10>
+						<table>
+							<tr>
+								<td>&nbsp;&nbsp;&nbsp
+								</td>
+								<td>
+									<br></br>
+									$content
+								</td>
+							<tr>
+						</table>
+					</td>
+				</tr>
+				<tr>
+					<td></td>
+					<td class="foot">
+						<br></br><hr size=1></hr>
+							$footer
+					</td>
+				</tr>
+			</table>
+		</body>
+	</html>
+</layout>
+
+<subPage>
+	<div class="subPage">
+		<table>
+			<tr>
+				<td>
+					$title
+				</td>
+			</tr>
+			<tr><td><hr size=1></hr></td></tr>
+			<tr>
+				<td>
+					$abstract <a href="$file">...</a>
+				</td>
+			</tr>
+		</table>
+	</div>
+</subPage>
+
+<nav>
+	<table width=160 cellspacing=0 cellpadding=0 border=0>
+		$entries
+	</table>
+</nav>
+
+<navTarget0>
+	<tr>
+		<td class="t_zero">
+				<a class="zero" href="$file">$label</a>&nbsp;
+		</td>
+		<td class="m_target">
+			&nbsp;
+		</td>
+	</tr>
+	$children
+</navTarget0>
+
+<navCurrent0>
+	<tr>
+		<td class="c_zero">
+			$label&nbsp;
+		</td>
+		<td class="m_current">
+			&nbsp;
+		</td>
+	</tr>
+	$children
+</navCurrent0>
+
+<navTarget1>
+	<tr bgcolor="#909090">
+		<td class="t_one">
+			<a class="one" href="$file">$label</a>&nbsp;&lt;&nbsp;
+		</td>
+		<td class="m_target"">
+			&nbsp;
+		</td>
+	</tr>
+	$children
+</navTarget1>
+
+<navCurrent1>
+	<tr>
+		<td class="c_one">
+			$label&nbsp;&lt;&nbsp;
+		</td>
+		<td class="m_current">
+			&nbsp;
+		</td>
+	</tr>
+	$children
+</navCurrent1>
+
+<navTarget2>
+	<tr>
+		<td class="t_two">
+			<a class="two" href="$file">$label</a>&nbsp;&lt;&nbsp;&lt;&nbsp;
+		</td>
+		<td class="m_target">
+			&nbsp;
+		</td>
+	</tr>
+	$children
+</navTarget2>
+
+<navCurrent2>
+	<tr>
+		<td class="c_two">
+					$label&nbsp;&lt;&nbsp;&lt;&nbsp;
+		</td>
+		<td class="m_current">
+			&nbsp;
+		</td>
+	</tr>
+	$children
+</navCurrent2>
+
+<fileSrc>
+	/usr/share/easySite/clean/style/
+</fileSrc>
+
+<fileDst>
+	style/
+</fileDst>
+
+</siteStyle>

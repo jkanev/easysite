@@ -1,0 +1,21 @@
+
+
+<layout type=...>
+
+	$author
+		page author, set in the info file with an <author> tag
+
+	$description
+		page description, set in the info file with a <description> tag
+
+	$keywords
+		page keywords, set in the info file with a <keywords> tag
+
+	$navBar
+		the navigation bar, filled by es
+
+	$title
+		page title, set in the <page> tag with the title="..." attribute
+
+	$content
+		the page content

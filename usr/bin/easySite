@@ -1,0 +1,379 @@
+#!/usr/bin/ruby
+require "/usr/lib/easySite/info"
+require "fileutils"
+require "date"
+
+#####
+
+class HtmlGenerator
+
+	#_______________________________________________________________________
+	# init
+
+	def initialize(initFile)
+
+		@layouts = {}   # the strings with the main page layout, indexed by page types
+		@navBar = {}   # the string with the layout for the navBar
+		@pages = []   # array of infos for each page
+		@styleFile = 'std'   # default style file, used unless overridden by user
+		@styleDef = {}   # this hash takes global style info
+						# from the .info and the .style file (fileSrc, fileDst, header, footer, author, keywords)
+		
+		# read user info file
+		File.open( initFile ) { |f|
+			infostring = f.read
+			# remove comments
+			infostring.gsub!( /<\s*?comment\s*?>.*?<\s*?\/\s*?comment\s*?>/m, '' )
+			# insert includes
+			while infostring =~ /<\s*?include.*?>/m
+				print "found includes...\n"
+				infostring.gsub!( /<\s*?include\s*?src="?(.*?)"?>.*?<\/include>/m ) {
+					print "including file: "
+					print $1
+					print "\n"
+					includeFile = File::new( $1, 'r' )
+					includeFile.read
+				}
+				infostring.gsub!( /<comment>.*?<\/comment>/m, '' )
+			end
+			# print infostring
+			# create info tree
+			site = Info::new(infostring, 'abstract|page|title|site|header|footer|settings|author|description|keyWords')
+			pageCount = 0
+			site.map { |nf|
+				case nf.type
+				
+				when 'page'
+					# insert page info
+					if !nf.attribs['file']
+						# set filename if not given,
+						# first file called index.html
+						if pageCount == 0
+							nf.setAttrib('file', 'index.html')
+						else
+							nf.setAttrib('file', 'page' + pageCount.to_s + '.html')
+						end
+						pageCount = pageCount + 1
+					end
+					if !nf.attribs['label']
+						nf.setAttrib('label', 'page' + pageCount.to_s)
+					end
+					if !nf.attribs['title']
+						nf.setAttrib('title', 'page' + pageCount.to_s)
+					end
+					
+				when 'settings'
+					# insert settings info
+					# the style definition file
+					@styleFile = nf.attribs['style']
+				
+				when /header|footer|author|description|keyWords/
+					# read global options
+					@styleDef[nf.type] = nf.content[0].content[0].to_s
+				
+				end
+			
+			}
+			# get the pages section
+			@pages = site.contentByType('page')
+			@pages.initPaths([])
+		}
+
+		# adjust style file location
+		['', '~/.easySite/', '/usr/share/easySite/'].each { |str|
+			if File::exist?( File::expand_path(str+@styleFile) )
+				@styleFile = File::expand_path( str + @styleFile + '/' + @styleFile + '.style' )
+				break
+			end
+		}
+
+		# read style file
+		print "using style " + @styleFile +"\n"
+		File.open( @styleFile ) { |f|
+			style = Info::new(f.read, 'siteStyle|link\S+?|nav\S*?|file\S*?|layout|subPage')
+			style.map { |nf|
+				case nf.type
+
+				when /\Anav/
+					# insert navBar info
+					@navBar[nf.type] = nf.content[0].content[0]
+					p nf.type
+
+				when /\Afile|\Alink/
+					# read file src and dst
+					@styleDef[nf.type] = nf.content[0].content[0].to_s
+					# p nf.type
+					# p nf.content[0].content[0].to_s
+					
+				when /layout/
+					# read html layout
+					@layouts[ nf.attribs['type'] ] = nf.content[0].content[0].to_s
+
+				when /subPage/
+					# read subPage layout
+					@subPage = nf.content[0].content[0]
+				end
+			}
+		}
+
+		@fileDst = @styleDef['fileDst']
+		@fileSrc = File::expand_path( @styleDef['fileSrc'] ) + '/'
+
+	end
+
+	#_______________________________________________________________________
+	# copy style-dependent files
+
+	def copyFiles
+
+		print "copying style-dependent files"
+		if @fileDst && @fileSrc
+			if !File::exist? @fileDst
+			then File::mkpath @fileDst
+			end
+			Dir::foreach(@fileSrc) { |fileName|
+				if !(fileName==".") & !(fileName=="..")
+					FileUtils::cp(@fileSrc+fileName, @fileDst)
+				end
+				print '.'
+			}
+			print "\n"
+		end
+
+	end
+
+	#_______________________________________________________________________
+	# make html
+
+	def make
+
+		print "making html files"
+		@pages.map { |nfPage|
+			unless nfPage.attribs['type'] == 'external' \
+					|| nfPage.type == 'text' \
+					|| nfPage.type == 'abstract'
+
+				# create basic layout
+				str = @layouts[ nfPage.attribs['type'] ]
+				if !str
+					str = @layouts[ 'default' ]
+				end;
+				str = String::new(str);
+				
+				# insert pre-defined definitions header, footer, keyWords, author
+				['header', 'footer', 'keyWords', 'author', 'description'].each { |type|
+					insert = @styleDef[type].to_s
+					str.gsub!(Regexp::new('\$'+type,Regexp::MULTILINE), insert)
+				}
+				
+				# create navBar
+				if nfPage.attribs['navBar'] == 'false'
+					navBar = '' # no navBar
+				else 
+					navBar = createNavBar( nfPage )
+				end
+				str.gsub!(/\$navBar/, navBar)
+				str += "\n\n"
+	
+				# create simple navigation
+				prv = nfPage.prev
+				until !prv || prv.type=='page'
+					prv = prv.prev
+				end;
+				if prv && @styleDef[ 'linkPrev' ]
+					insert = @styleDef[ 'linkPrev' ]
+					insert = insert.gsub(/\$file/, prv.attribs['file'].to_s)
+					insert.gsub!(/\$image/, prv.attribs['image'].to_s)
+					insert.gsub!(/\$label/, prv.attribs['label'].to_s)
+					# p prv.to_s
+					str.gsub!( /\$linkPrev/, insert)
+				else
+					str.gsub!(/\$linkPrev/, '')
+				end
+				nxt = nfPage.next
+				until !nxt || nxt.type=='page'
+					nxt = nxt.next
+				end;
+				if nxt && @styleDef[ 'linkNext' ]
+					insert = @styleDef[ 'linkNext' ]
+					insert = insert.gsub(/\$file/, nxt.attribs['file'].to_s)
+					insert.gsub!(/\$image/, nxt.attribs['image'].to_s)
+					insert.gsub!(/\$label/, nxt.attribs['label'].to_s)
+					# p nxt.to_s
+					str.gsub!( /\$linkNext/, insert)
+				else
+					str.gsub!(/\$linkNext/, '')
+				end
+				if nfPage.up && @styleDef[ 'linkUp' ]
+					insert = @styleDef[ 'linkUp' ]
+					insert = insert.gsub(/\$file/, nfPage.up.attribs['file'].to_s)
+					insert.gsub!(/\$image/, nfPage.up.attribs['image'].to_s)
+					insert.gsub!(/\$label/, nfPage.up.attribs['label'].to_s)
+					# p nfPage.up.to_s
+					str.gsub!( /\$linkUp/, insert)
+				else
+					str.gsub!(/\$linkUp/, '')
+				end
+				
+				# fill in body
+				content = ''
+				nfPage.content.each { |c|
+					if c.type == 'text'
+						content += c.content[0]
+					elsif c.type == 'page'
+						interim = @subPage.sub(/\$title/, c.attribs['title'].to_s)
+						interim.sub!(/\$file/, c.attribs['file'].to_s)
+						abstract = c.contentByType('abstract')
+						if abstract
+							interim.sub!(/\$abstract/, abstract.content[0].content[0])
+						else
+							interim.sub!(/\$abstract/, '')
+						end
+						content += interim
+					end
+				}
+				str.sub!(/\$content/, content)
+
+				# insert title
+				str.sub!(/\$title/, nfPage.attribs['title'] ? nfPage.attribs['title'] : '')
+
+				# insert date
+				str.gsub!(/\$date/, Date::today.to_s)
+
+				# write file
+				name = nfPage.attribs['file']
+				print '.'
+				File.open(name,'w') {|f|
+					f.write str
+				}
+
+			end # unless
+		}
+
+		print "\n"
+	end
+
+	#__________________________________
+	# create a navBar for a page
+	# page:Info contains the page description
+	def createNavBar( page )
+
+		# follow page path to collect refs of all parents and their direct children
+		links = [@pages]
+		@pages.followPath( page.path ) { |parent|
+			# parent is active:  append all children
+			parent.content.each { |child|
+				if (child.type == 'page') & !child.attribs['hide']
+					links << child
+					end
+				}
+		}
+		# make navBar-strings array
+		navStrings = []
+		levels = []
+		links.sort.each { |link|
+			levels << link.path.length
+			navStrings << makeLink( link, link.path==page.path, page.path[0..link.path.length-1] == link.path )
+		}
+		# merge children into parents
+		navString = mergeLinks( navStrings, levels, 0 )
+		navBar = @navBar['nav'].gsub(/\$entries/, navString)
+	end
+
+	#__________________________________
+	# merge child infos of the same level into their parent
+	# strings is an array containing the node strings
+	# levels is an array containing the levels of the nodes
+	# n is the current position
+	def mergeLinks( strings, levels, n )
+		m = n
+		s = ''
+		firstChild = true
+		while m < levels.length && levels[m] >= levels[n]
+			if levels[m] == levels[n]
+				# append same-level node
+				s += strings[m]
+				firstChild = true
+				# remove $children tag if there are no children
+				unless m+1 >= levels.length || levels[m+1] > levels[m]
+					s.gsub! /\$children/, ''
+				end
+			elsif firstChild == true
+				# merge all children into parent
+				s.gsub!( /\$children/, mergeLinks(strings, levels, m) )
+				firstChild = false
+			end
+			m += 1
+		end
+		s.gsub /\$children/, ''
+	end
+	
+	#__________________________________
+	# create a link string for the current page
+	# info is the object describing the page
+	# if 'current' is true, this is a currentLink, otherwise it is a targetLink
+	def makeLink( info, current, childopen )
+		if current # current link
+			string = @navBar['navCurrent' + info.path.length.to_s]
+			if string == nil
+				print 'Error: No navCurrent' + info.path.length.to_s + " defined\n"
+			end
+		else # target link
+			if childopen
+				string = @navBar['navOpen' + info.path.length.to_s]
+				if string == nil
+					print 'Error: No navOpen' + info.path.length.to_s + " defined\n"
+				end
+			else
+				string = @navBar['navTarget' + info.path.length.to_s]
+				if string == nil
+					print 'Error: No navTarget' + info.path.length.to_s + " defined\n"
+				end
+			end
+		end
+		
+		# filling in file
+		if string != nil then
+			replace = info.attribs['file'].to_s
+			if string =~ /\$file/
+				string = string.gsub(/\$file/, replace)
+			else
+				print 'Warning: No $file defined in ' + replace + "\n"
+			end
+			
+			# filling in label
+			replace = info.attribs['label'].to_s
+			if string =~ /\$label/
+				string = string.gsub(/\$label/, replace)
+			else
+				print 'Warning: No $label defined in ' + replace + "\n"
+			end
+				
+			# filling in image
+			replace = info.attribs['image'].to_s
+			if string =~ /\$image/
+				string = string.gsub(/\$image/, replace)
+			else
+				print 'Warning: No $image defined in ' + replace + "\n"
+			end
+		else
+			string = ''
+		end
+		
+		# return link
+		string
+	end
+end
+
+
+#_______________________________________________________________________
+# main execution part
+
+if ARGV.size > 0
+	makeHtml = HtmlGenerator.new ARGV[0];
+	makeHtml.copyFiles
+	makeHtml.make
+else
+	print "No file argument given. \n\n Synosis: \n easySite infoFile\n\n"
+end
+

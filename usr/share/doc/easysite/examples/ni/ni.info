@@ -1,0 +1,44 @@
+
+<settings style = but> 
+</settings>
+
+<author>
+   Konstantin Eduardowitsch Ziolkowsky
+</author>
+   
+<keyWords>
+   computational neuro science, c++, ruby
+</keyWords>
+   
+<header>
+   Homepage of <author>
+</header>
+   
+<footer>
+   (C) by <author>, <date>.
+</footer>
+
+<page title = Main Page type = text label = Intro>
+   <img src="ziolkowski_01.jpg"> <br>
+   I made space ships, rockets and satellites possible.<br>
+   This is the main page of my home page.
+</page>
+
+<page title = Publications type = text label = Publications>
+   Here is a list of my publications.
+</page>
+
+<page title = Curriculum Vitae type = text label = CV>
+   I was born in 1859. I died in 1935. In between I founded the mathematical basis for the construction of space vessels.
+</page>
+
+<page title = Contact Information type = text label = Contact>
+   You cannot contact me. Im dead.
+</page>
+
+<page type = external label = TU Berlin file = http://www.tu-berlin.de/index>
+</page>
+
+<page type = external label = NI Group file = http://ni.cs.tu-berlin.de/index>
+</page>
+
